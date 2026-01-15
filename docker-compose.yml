@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    networks:
+      - backend-net
+  
+
+  redis:
+    image: redis:alpine
+    networks:
+      - backend-net
+    volumes:
+      - redis_data:/data
+
+
+
+networks:
+  backend-net:
+
+volumes:
+  redis_data:
