@@ -1,15 +1,13 @@
-# 1. El Servicio (La "dirección IP" estable de Redis)
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis  # <-- IMPORTANTE: Este nombre será el hostname para tu app
+  name: redis-db  # <--- CAMBIO AQUÍ (Antes era 'redis')
 spec:
   ports:
   - port: 6379
   selector:
     app: redis
 ---
-# 2. El Despliegue (El contenedor en sí)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
