@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  jenkins:
+    # Usamos la versión LTS (Long Term Support) con Java 17
+    image: jenkins/jenkins:lts-jdk17
+    container_name: devops-jenkins
+    user: root # Necesario para que Jenkins tenga permiso de usar el Docker de tu PC
+    ports:
+      - "8080:8080"   # Puerto web de Jenkins
+      - "50000:50000" # Puerto para agentes esclavos (lo usaremos luego)
+    volumes:
+      - jenkins_home:/var/jenkins_home              # Persistencia: No perder datos si reinicias
+      - /var/run/docker.sock:/var/run/docker.sock   # EL TRUCO: Conectamos el Docker de dentro con el de fuera
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - jenkins-net
+
+networks:
+  jenkins-net:
+
+volumes:
+  jenkins_home:
