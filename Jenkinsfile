@@ -2,16 +2,15 @@ pipeline {
     agent any
 
     environment {
-        // OJO: Aquí pusimos un nombre temporal. 
-        // No importa para el Build, pero para el Push (futuro) deberemos cambiarlo.
-        DOCKER_IMAGE = 'cjrq21/devops-portfolio'
-        DOCKER_TAG = "${BUILD_NUMBER}" 
+        // Asegúrate de que este sea tu usuario real
+        DOCKER_IMAGE = 'cjrq21/devops-portfolio' 
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Descarga el código de GitHub
                 checkout scm
             }
         }
@@ -19,12 +18,9 @@ pipeline {
         stage('Build & Test') {
             steps {
                 script {
-                    // TRUCO DEVOPS:
-                    // 1. Construimos la imagen hasta la etapa "builder" (donde están las herramientas de compilación)
+                    echo "--- Construyendo y Testeando ---"
+                    // --no-cache es opcional, pero ayuda si te da errores raros
                     sh "docker build --target builder -t test-image ."
-                    
-                    // 2. Corremos los tests DENTRO de ese contenedor temporal.
-                    // Si los tests fallan aquí, el pipeline se detiene y no pasa a producción.
                     sh "docker run --rm test-image pytest"
                 }
             }
@@ -33,22 +29,24 @@ pipeline {
         stage('Build Release') {
             steps {
                 script {
-                    // Si los tests pasaron, construimos la imagen final ligera y segura
+                    echo "--- Generando Imagen Final ---"
                     sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
                 }
             }
         }
-        
-       stage('Push to Registry') {
+
+        stage('Push to Registry') {
             steps {
                 script {
                     echo "--- Subiendo a Docker Hub ---"
-                    // Esto usa el plugin 'Docker Pipeline' y las credenciales que guardaste
+                    // Si te da error de 'toolName', borra la parte de ", toolName: 'docker'"
                     withDockerRegistry(credentialsId: DOCKER_CREDENTIALS_ID, toolName: 'docker') {
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                         sh "docker push ${DOCKER_IMAGE}:latest"
                     }
                 }
             }
+        }
     }
 }
