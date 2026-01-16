@@ -1,0 +1,40 @@
+# 1. El Servicio (Para que puedas entrar desde tu navegador)
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-portfolio-service
+spec:
+  type: LoadBalancer # Esto expone el servicio en localhost
+  selector:
+    app: devops-portfolio
+  ports:
+    - protocol: TCP
+      port: 80      # Puerto al que llamarás en el navegador
+      targetPort: 8000 # Puerto donde escucha tu contenedor Python
+---
+# 2. El Despliegue (Tus contenedores)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-portfolio
+spec:
+  replicas: 2 # ¡Vamos a correr 2 copias para probar Alta Disponibilidad!
+  selector:
+    matchLabels:
+      app: devops-portfolio
+  template:
+    metadata:
+      labels:
+        app: devops-portfolio
+    spec:
+      containers:
+      - name: devops-portfolio
+        # USAMOS LA IMAGEN QUE SUBISTE A DOCKER HUB
+        image: cjrq21/devops-portfolio:latest 
+        imagePullPolicy: Always # Fuerza a bajar la última versión siempre
+        ports:
+        - containerPort: 8000
+        env:
+        # Aquí conectamos la App con el Redis usando el nombre del servicio
+        - name: REDIS_HOST
+          value: "redis"
