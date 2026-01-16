@@ -1,34 +1,43 @@
-# Usamos una imagen base ligera de Python
+# --- ETAPA 1: Builder (Para compilar y testear) ---
+# Le ponemos nombre "builder" para que Jenkins pueda llamarlo
+FROM python:3.9-slim as builder
+
+WORKDIR /app
+
+# Copiamos requirements
+COPY requirements.txt .
+
+# Instalamos todo (incluyendo pytest y httpx)
+# Lo hacemos en /usr/local para que sea accesible globalmente
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiamos el código (Necesario para correr tests en esta etapa)
+COPY ./app ./app
+COPY ./tests ./tests
+
+# --- ETAPA 2: Runtime (La imagen final ligera) ---
 FROM python:3.9-slim
 
-# Evitamos que Python genere archivos .pyc y logs en buffer
+WORKDIR /app
+
+# Evitamos archivos basura de Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Establecemos el directorio de trabajo
-WORKDIR /app
-
-# --- CORRECCIÓN DE SEGURIDAD ---
-# 1. Creamos el usuario PRIMERO
+# 1. Creamos el usuario
 RUN useradd -m appuser
 
-# 2. Copiamos los requirements
-COPY requirements.txt .
+# 2. Copiamos las librerías instaladas desde la etapa 'builder'
+#    Esto es magia de Docker: copiamos de una imagen a otra
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# 3. Instalamos las dependencias GLOBALMENTE (System-wide)
-#    Esto las pone en /usr/local/lib/python..., donde 'appuser' SÍ puede leerlas.
-#    Ya no usamos '--user'
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 4. Copiamos el código de la aplicación
-#    Usamos '--chown' para que los archivos pertenezcan al usuario correcto desde el inicio
+# 3. Copiamos solo el código de la app (No copiamos los tests a producción)
 COPY --chown=appuser:appuser ./app ./app
 
-# 5. Cambiamos al usuario seguro
+# 4. Cambiamos al usuario seguro
 USER appuser
 
-# Exponemos el puerto
 EXPOSE 8000
 
-# Comando por defecto (Producción)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
