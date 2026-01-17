@@ -1,7 +1,7 @@
 # --- ETAPA 1: Builder (Para compilar y testear) ---
 # Le ponemos nombre "builder" para que Jenkins pueda llamarlo
 #FROM python:3.9-slim as builder
-FROM python:3.11-slim-bookworm as builder
+FROM python:3.9-slim as builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY ./app ./app
 COPY ./tests ./tests
 
 # --- ETAPA 2: Runtime (La imagen final ligera) ---
-FROM python:3.11-slim-bookworm
+FROM python:3.9-slim
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN useradd -m appuser
 
 # 2. Copiamos las librerías instaladas desde la etapa 'builder'
 #    Esto es magia de Docker: copiamos de una imagen a otra
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # 3. Copiamos solo el código de la app (No copiamos los tests a producción)
