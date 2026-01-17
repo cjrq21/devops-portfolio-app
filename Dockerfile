@@ -1,7 +1,7 @@
 # --- ETAPA 1: Builder (Para compilar y testear) ---
 # Le ponemos nombre "builder" para que Jenkins pueda llamarlo
 #FROM python:3.9-slim as builder
-FROM python:3.11-slim as builder
+FROM python:3.11-slim-bookworm as builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY ./app ./app
 COPY ./tests ./tests
 
 # --- ETAPA 2: Runtime (La imagen final ligera) ---
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
