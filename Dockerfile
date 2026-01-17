@@ -1,42 +1,39 @@
-# --- ETAPA 1: Builder (Para compilar y testear) ---
-# Le ponemos nombre "builder" para que Jenkins pueda llamarlo
-#FROM python:3.9-slim as builder
-FROM python:3.9-slim as builder
+# --- ETAPA 1: Builder (Alpine) ---
+FROM python:3.9-alpine as builder
 
 WORKDIR /app
 
-# Copiamos requirements
+# Instalamos compiladores básicos (necesarios para algunas libs de Python en Alpine)
+RUN apk add --no-cache gcc musl-dev libffi-dev
+
 COPY requirements.txt .
 
-# Instalamos todo (incluyendo pytest y httpx)
-# Lo hacemos en /usr/local para que sea accesible globalmente
+# Instalamos las dependencias
+# --no-cache-dir: Para que la imagen sea ligera
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiamos el código (Necesario para correr tests en esta etapa)
 COPY ./app ./app
 COPY ./tests ./tests
 
-# --- ETAPA 2: Runtime (La imagen final ligera) ---
-FROM python:3.9-slim
+# --- ETAPA 2: Runtime (Alpine) ---
+FROM python:3.9-alpine
 
 WORKDIR /app
 
-# Evitamos archivos basura de Python
+# Evitamos archivos basura
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# 1. Creamos el usuario
-RUN useradd -m appuser
+# Creamos usuario
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# 2. Copiamos las librerías instaladas desde la etapa 'builder'
-#    Esto es magia de Docker: copiamos de una imagen a otra
+# Copiamos las librerías desde el builder
+# Nota: En Alpine la ruta suele ser la misma /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# 3. Copiamos solo el código de la app (No copiamos los tests a producción)
-COPY --chown=appuser:appuser ./app ./app
+COPY --chown=appuser:appgroup ./app ./app
 
-# 4. Cambiamos al usuario seguro
 USER appuser
 
 EXPOSE 8000
