@@ -28,8 +28,8 @@ pipeline {
             steps {
                 script {
                     echo "--- Generando Imagen Final ---"
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                    sh "docker build --no-cache -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    sh "docker build --no-cache -t ${DOCKER_IMAGE}:latest ."
                 }
             }
         }
