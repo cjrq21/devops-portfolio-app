@@ -4,6 +4,8 @@
 ![Docker](https://img.shields.io/badge/Docker-Enabled-blue?style=flat&logo=docker)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-blue?style=flat&logo=kubernetes)
 ![Jenkins](https://img.shields.io/badge/CI%2FCD-Jenkins-red?style=flat&logo=jenkins)
+![Trivy](https://img.shields.io/badge/Security-Trivy-aquamarine?style=flat&logo=aquasec)
+![Alpine](https://img.shields.io/badge/OS-Alpine_Linux-blue?style=flat&logo=alpine-linux)
 
 Este repositorio contiene una implementación completa de un ciclo de vida **DevOps**. Muestra cómo una aplicación web (FastAPI + Redis) viaja desde el entorno de desarrollo local hasta un clúster de Kubernetes en producción, pasando por un pipeline automatizado de CI/CD.
 
@@ -14,10 +16,26 @@ Este repositorio contiene una implementación completa de un ciclo de vida **Dev
 El proyecto simula un entorno empresarial real utilizando las siguientes capas:
 
 1.  **Código:** API REST en Python (FastAPI) con base de datos en memoria (Redis) para persistencia de datos.
-2.  **Containerización:** Imágenes Docker optimizadas utilizando *Multi-Stage Builds* para reducir el tamaño y mejorar la seguridad.
+2.  **Containerización Segura:** Imágenes basadas en **Alpine Linux** (Hardened), ejecutadas con usuarios no-root y sin herramientas de construcción en producción.
 3.  **CI (Integración Continua):** Jenkins automatiza el testing (utilizando Mocks para aislar dependencias) y la construcción de artefactos.
 4.  **Registry:** Publicación segura y versionada de imágenes en **Docker Hub**.
 5.  **Orquestación:** Despliegue en **Kubernetes** con configuración de Alta Disponibilidad, Balanceo de Carga y Auto-healing.
+6.  **DevSecOps:** Escaneo automático de vulnerabilidades (CVEs) en cada build utilizando **Trivy**, con política de tolerancia cero para vulnerabilidades críticas.
+
+---
+
+## 🛡️ Estrategia DevSecOps (Image Hardening)
+
+Este proyecto implementa estrictos controles de seguridad en la construcción de contenedores:
+
+1.  **Base Minimalista:** Migración de Debian a **Alpine Linux**, reduciendo la superficie de ataque y el tamaño de la imagen (~50MB).
+2.  **Segregación de Dependencias:**
+    * Librerías de desarrollo (`pytest`, `setuptools`) se instalan solo en la etapa de `builder`.
+    * Solo las librerías estrictamente necesarias viajan a la imagen final.
+3.  **Limpieza en Runtime:** Se eliminan gestores de paquetes (`pip`, `apk`) y herramientas de construcción en la imagen final para evitar la inyección de malware.
+4.  **Escaneo Automatizado:**
+    * Integración de **Trivy** en el Pipeline de Jenkins.
+    * El pipeline falla si detecta vulnerabilidades `CRITICAL` o `HIGH` no resueltas.
 
 ---
 
@@ -87,6 +105,7 @@ cd devops-portfolio-app
 **Lo que sucederá automáticamente:**
 * ✅ **Checkout:** Jenkins descargará tu código.
 * ✅ **Test:** Se ejecutarán las pruebas unitarias con `pytest` (usando mocks para Redis).
+* 🛡️ **Security Scan:** Trivy analiza la imagen en busca de CVEs.
 * ✅ **Build:** Se construirá la imagen Docker optimizada.
 * ✅ **Push:** La imagen se subirá a tu repositorio en Docker Hub.
 
