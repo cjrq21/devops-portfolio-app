@@ -5,6 +5,7 @@
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-blue?style=flat&logo=kubernetes)
 ![Jenkins](https://img.shields.io/badge/CI%2FCD-Jenkins-red?style=flat&logo=jenkins)
 ![Trivy](https://img.shields.io/badge/Security-Trivy-aquamarine?style=flat&logo=aquasec)
+![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-orange?style=flat&logo=argo)
 ![Alpine](https://img.shields.io/badge/OS-Alpine_Linux-blue?style=flat&logo=alpine-linux)
 
 Este repositorio contiene una implementación completa de un ciclo de vida **DevOps**. Muestra cómo una aplicación web (FastAPI + Redis) viaja desde el entorno de desarrollo local hasta un clúster de Kubernetes en producción, pasando por un pipeline automatizado de CI/CD.
@@ -36,6 +37,22 @@ Este proyecto implementa estrictos controles de seguridad en la construcción de
 4.  **Escaneo Automatizado:**
     * Integración de **Trivy** en el Pipeline de Jenkins.
     * El pipeline falla si detecta vulnerabilidades `CRITICAL` o `HIGH` no resueltas.
+
+---
+
+## 🔄 Flujo de Trabajo GitOps (CD Automatizado)
+
+Este proyecto implementa un modelo **GitOps** puro, donde el repositorio de Git actúa como la "Única Fuente de Verdad".
+
+1.  **Continuous Integration (Jenkins):**
+    * Al recibir código nuevo, Jenkins ejecuta tests y escaneos de seguridad.
+    * Si todo pasa, construye una nueva imagen Docker (ej: `v25`).
+    * **Auto-Commit:** Jenkins edita automáticamente el archivo `k8s/app.yaml` en este repositorio con el nuevo tag de la imagen y hace un `git push`.
+
+2.  **Continuous Delivery (ArgoCD):**
+    * ArgoCD (corriendo dentro del clúster) detecta el cambio en el repositorio Git.
+    * Sincroniza automáticamente el estado del clúster para coincidir con el repositorio.
+    * Resultado: Despliegue automático sin intervención humana y sin exponer credenciales del clúster al servidor de CI.
 
 ---
 
@@ -83,6 +100,25 @@ docker run -d -p 8080:8080 -p 50000:50000 --name devops-jenkins -v /var/run/dock
     * **ID:** `docker-hub-credentials` (Es vital que uses este ID exacto).
 
 ---
+
+### E. Configuración de GitOps (ArgoCD)
+
+Para habilitar el despliegue continuo:
+
+1.  **Instalar ArgoCD:**
+    ```bash
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f [https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml](https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml)
+    ```
+
+2.  **Acceder al Dashboard:**
+    ```bash
+    kubectl port-forward svc/argocd-server -n argocd 8082:443
+    # Accede a https://localhost:8082 (Usuario: admin)
+    ```
+
+3.  **Conectar Repositorio:**
+    Desde la UI de ArgoCD, crea una "New App" apuntando a este repositorio (path: `k8s/`) y configura la política de sincronización en **Automática**.
 
 ## 🚀 Despliegue del Proyecto
 

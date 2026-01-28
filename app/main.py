@@ -34,4 +34,4 @@ def read_root():
 @app.get("/health")
 def health_check():
 
-    return {"status": "ok", "redis": r.ping() if 'r' in globals() else False}
+    return {"status": "ok ahora con ArgoCD", "redis": r.ping() if 'r' in globals() else False}
