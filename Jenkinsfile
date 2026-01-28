@@ -57,5 +57,33 @@ pipeline {
                 }
             }
         }
+        stage('Update Manifest (GitOps)') {
+            steps {
+                script {
+                    echo "--- Actualizando versión en Git ---"
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials', passwordVariable: 'GIT_TOKEN', usernameVariable: 'GIT_USER')]) {
+                        sh '''
+                            # Configurar identidad para el commit
+                            git config user.email "jenkins-bot@example.com"
+                            git config user.name "Jenkins GitOps Bot"
+                            
+                            # Actualizar el archivo yaml usando SED
+                            # Busca "image: cjrq21/devops-portfolio:..." y lo reemplaza con el nuevo BUILD_NUMBER
+                            sed -i "s|image: cjrq21/devops-portfolio:.*|image: cjrq21/devops-portfolio:${BUILD_NUMBER}|g" k8s/app.yaml
+                            
+                            # Verificar el cambio (opcional, para verlo en logs)
+                            cat k8s/app.yaml | grep image:
+                            
+                            # Commit y Push
+                            git add k8s/app.yaml
+                            git commit -m "chore(release): update image tag to ${BUILD_NUMBER} [skip ci]"
+                            
+                            # Push autenticado usando las variables de entorno
+                            git push https://${GIT_USER}:${GIT_TOKEN}@github.com/cjrq21/devops-portfolio-app.git HEAD:main
+                        '''
+                    }
+                }
+            }
+        }
     }
 }
