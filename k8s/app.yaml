@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: devops-portfolio
-        image: cjrq21/devops-portfolio:latest
+        image: cjrq21/devops-portfolio:30
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
