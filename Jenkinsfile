@@ -3,7 +3,7 @@ pipeline {
 
     // 1. Cargamos la herramienta que configuramos en Jenkins
     tools {
-        'org.sonarsource.scanner.jenkins.runner.SonarQubeScanner' 'sonar-scanner'
+        'hudson.plugins.sonar.SonarRunnerInstallation' 'sonar-scanner'
     }
 
     environment {
