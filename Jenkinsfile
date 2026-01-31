@@ -20,20 +20,24 @@ pipeline {
         }
 
         // --- NUEVO STAGE: ANÁLISIS DE CÓDIGO ---
-        stage('SonarQube Analysis') {
+stage('SonarQube Analysis') {
             steps {
                 script {
                     echo "--- Iniciando Análisis de Código Estático ---"
-                    // 'sonarqube-server' debe coincidir con el nombre en Manage Jenkins > System
+                    
+                    // 1. Preguntamos a Jenkins dónde instaló la herramienta
+                    def scannerHome = tool 'sonar-scanner'
+                    
                     withSonarQubeEnv('sonarqube-server') {
-                        sh '''
-                        sonar-scanner \
+                        // 2. Usamos la ruta COMPLETA al ejecutable (dentro de la carpeta bin)
+                        sh """
+                        "${scannerHome}/bin/sonar-scanner" \
                           -Dsonar.projectKey=devops-portfolio \
                           -Dsonar.projectName="DevOps Portfolio" \
                           -Dsonar.projectVersion=${BUILD_NUMBER} \
                           -Dsonar.sources=. \
                           -Dsonar.sourceEncoding=UTF-8
-                        '''
+                        """
                     }
                 }
             }
