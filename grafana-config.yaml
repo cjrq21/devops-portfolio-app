@@ -1,0 +1,36 @@
+# 1. Desactivar Node Exporter (No funciona en Docker Desktop y da error)
+nodeExporter:
+  enabled: false
+
+# 2. Configuración de Grafana
+grafana:
+  # Permisos "Modo Windows" (Usuario 472 es el default de Grafana)
+  securityContext:
+    runAsUser: 472
+    runAsGroup: 472
+    fsGroup: 472
+  
+  # Desactivar disco persistente (Todo en RAM para evitar corrupción)
+  persistence:
+    enabled: false
+
+  # Contraseña de Admin
+  adminPassword: "admin"
+
+  # Configuración de Logs
+  service:
+    type: ClusterIP
+
+  # Inyectar la conexión a Loki automáticamente
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki-auto
+      access: proxy
+      url: http://loki:3100
+      jsonData:
+        derivedFields:
+          - datasourceUid: runner
+            matcherRegex: "runner_id=(\\d+)"
+            name: RunnerID
+            url: "$${__value.raw}"

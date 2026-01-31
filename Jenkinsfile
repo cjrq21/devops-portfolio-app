@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    // 1. Cargamos la herramienta que configuramos en Jenkins
+    tools {
+        'org.sonarsource.scanner.jenkins.runner.SonarQubeScanner' 'sonar-scanner'
+    }
+
     environment {
         DOCKER_IMAGE = 'cjrq21/devops-portfolio'
         DOCKER_TAG = "${BUILD_NUMBER}"
@@ -13,6 +18,27 @@ pipeline {
                 checkout scm
             }
         }
+
+        // --- NUEVO STAGE: ANÁLISIS DE CÓDIGO ---
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    echo "--- Iniciando Análisis de Código Estático ---"
+                    // 'sonarqube-server' debe coincidir con el nombre en Manage Jenkins > System
+                    withSonarQubeEnv('sonarqube-server') {
+                        sh '''
+                        sonar-scanner \
+                          -Dsonar.projectKey=devops-portfolio \
+                          -Dsonar.projectName="DevOps Portfolio" \
+                          -Dsonar.projectVersion=${BUILD_NUMBER} \
+                          -Dsonar.sources=. \
+                          -Dsonar.sourceEncoding=UTF-8
+                        '''
+                    }
+                }
+            }
+        }
+        // ----------------------------------------
 
         stage('Build & Test') {
             steps {
@@ -35,16 +61,15 @@ pipeline {
             }
         }
 
-        // --- NUEVO STAGE AQUÍ ---
         stage('Security Scan (Trivy)') {
             steps {
                 script {
                     echo "--- Escaneando Vulnerabilidades con Trivy ---"
+                    // Nota: Si falla Trivy, el pipeline se detendrá aquí antes de subir nada
                     sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
         }
-        // ------------------------
 
         stage('Push to Registry') {
             steps {
@@ -57,6 +82,7 @@ pipeline {
                 }
             }
         }
+
         stage('Update Manifest (GitOps)') {
             steps {
                 script {
@@ -68,17 +94,11 @@ pipeline {
                             git config user.name "Jenkins GitOps Bot"
                             
                             # Actualizar el archivo yaml usando SED
-                            # Busca "image: cjrq21/devops-portfolio:..." y lo reemplaza con el nuevo BUILD_NUMBER
                             sed -i "s|image: cjrq21/devops-portfolio:.*|image: cjrq21/devops-portfolio:${BUILD_NUMBER}|g" k8s/app.yaml
-                            
-                            # Verificar el cambio (opcional, para verlo en logs)
-                            cat k8s/app.yaml | grep image:
                             
                             # Commit y Push
                             git add k8s/app.yaml
                             git commit -m "chore(release): update image tag to ${BUILD_NUMBER} [skip ci]"
-                            
-                            # Push autenticado usando las variables de entorno
                             git push https://${GIT_USER}:${GIT_TOKEN}@github.com/cjrq21/devops-portfolio-app.git HEAD:main
                         '''
                     }
