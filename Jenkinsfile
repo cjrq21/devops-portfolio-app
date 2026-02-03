@@ -24,7 +24,7 @@ pipeline {
                 checkout scm
                 script {
                     // Capturamos el mensaje AHORA, antes de ensuciar el historial
-                    env.COMMIT_MSG = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    env.COMMIT_MSG = sh(script: 'git log -1 --no-merges --pretty=%B', returnStdout: true).trim()
                     echo "📝 Mensaje del Commit detectado: ${env.COMMIT_MSG}"
                 }
             }
