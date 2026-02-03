@@ -17,7 +17,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: devops-portfolio
-        image: cjrq21/devops-portfolio:55
+        image: cjrq21/devops-portfolio:56
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
