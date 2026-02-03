@@ -21,8 +21,16 @@ spec:
       labels:
         app: redis
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: redis
         image: redis:alpine
         ports:
         - containerPort: 6379
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"  # <--- Esto es lo que pide SonarQube
+            cpu: "100m"
