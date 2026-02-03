@@ -37,6 +37,7 @@ pipeline {
                           -Dsonar.projectName="DevOps Portfolio" \
                           -Dsonar.projectVersion=${BUILD_NUMBER} \
                           -Dsonar.sources=. \
+                          -Dsonar.coverage.exclusions=bot_listener.py \
                           -Dsonar.sourceEncoding=UTF-8
                         """
                     }
