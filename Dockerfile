@@ -26,6 +26,9 @@ RUN pytest
 # --- ETAPA 2: Runtime (Alpine Limpio) ---
 FROM python:3.9-alpine
 
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache openssl
+
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -40,7 +43,7 @@ COPY --from=builder /app/libs /app/libs
 # --- EL TRUCO DE MAGIA ESTÁ AQUÍ ---
 # Desinstalamos las herramientas de build que traen vulnerabilidades
 # Esto elimina setuptools (y su jaraco infectado) y pip
-RUN pip uninstall -y setuptools pip
+RUN pip uninstall -y setuptools pip wheel
 
 COPY --chmod=555 ./app ./app
 
