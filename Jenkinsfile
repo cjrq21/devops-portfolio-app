@@ -110,27 +110,32 @@ pipeline {
     post {
         success {
             script {
-                sendTelegramReport('SUCCESS', '🚀 Despliegue Exitoso')
+                // Capturamos el último mensaje de commit
+                def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                // Enviamos el reporte CON el mensaje
+                sendTelegramReport('SUCCESS', '🚀 Despliegue Exitoso', commitMsg)
             }
         }
         failure {
             script {
-                sendTelegramReport('FAILURE', '❌ Fallo en el Pipeline')
+                def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                sendTelegramReport('FAILURE', '❌ Fallo en el Pipeline', commitMsg)
             }
         }
     }
 }
 
-// --- FUNCIÓN PERSONALIZADA PARA TELEGRAM ---
-def sendTelegramReport(buildStatus, title) {
-    // Definimos el icono de SonarQube visualmente
+// --- FUNCIÓN PERSONALIZADA PARA TELEGRAM (ACTUALIZADA) ---
+def sendTelegramReport(buildStatus, title, commitMsg) {
     def sonarStatus = (buildStatus == 'SUCCESS') ? 'Passed ✅' : 'Check Logs ⚠️'
     
-    // Construimos el mensaje en formato HTML
-    // Nota: Jenkins inyecta las variables ${env.VAR} automáticamente
+    // Limpieza básica para no romper el HTML de Telegram si usas caracteres raros
+    def safeCommitMsg = commitMsg.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+
     def message = """
 <b>${title}</b>
 
+📝 <b>Commit:</b> <i>${safeCommitMsg}</i>
 📦 <b>App Version:</b> v${env.BUILD_NUMBER}
 🐙 <b>Git Repo:</b> <a href='${env.GIT_URL}'>Ver cambios</a>
 🐳 <b>Docker Image:</b> <a href='https://hub.docker.com/r/${env.DOCKER_IMAGE}/tags'>${env.DOCKER_IMAGE}:${env.DOCKER_TAG}</a>
@@ -142,7 +147,6 @@ def sendTelegramReport(buildStatus, title) {
 ☸️ <b>ArgoCD:</b> Sincronizando en breve...
     """
 
-    // Enviamos el mensaje usando curl a la API de Telegram
     sh """
         curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
         -d chat_id=${env.TELEGRAM_CHAT_ID} \
