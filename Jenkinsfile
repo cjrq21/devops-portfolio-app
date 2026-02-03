@@ -22,6 +22,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                script {
+                    // Capturamos el mensaje AHORA, antes de ensuciar el historial
+                    env.COMMIT_MSG = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    echo "📝 Mensaje del Commit detectado: ${env.COMMIT_MSG}"
+                }
             }
         }
 
@@ -107,19 +112,18 @@ pipeline {
     }
 
     // --- NUEVO: Bloque POST para notificaciones ---
-    post {
+   post {
         success {
             script {
-                // Capturamos el último mensaje de commit
-                def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
-                // Enviamos el reporte CON el mensaje
-                sendTelegramReport('SUCCESS', '🚀 Despliegue Exitoso', commitMsg)
+                // Usamos la variable guardada al inicio
+                sendTelegramReport('SUCCESS', '🚀 Despliegue Exitoso', env.COMMIT_MSG)
             }
         }
         failure {
             script {
-                def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
-                sendTelegramReport('FAILURE', '❌ Fallo en el Pipeline', commitMsg)
+                // Si falla muy al inicio, puede que la variable esté vacía, prevenimos eso
+                def msg = env.COMMIT_MSG ?: "Fallo antes de leer el commit"
+                sendTelegramReport('FAILURE', '❌ Fallo en el Pipeline', msg)
             }
         }
     }
