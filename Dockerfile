@@ -39,7 +39,7 @@ COPY --from=builder /app/libs /app/libs
 # Esto elimina setuptools (y su jaraco infectado) y pip
 RUN pip uninstall -y setuptools pip
 
-COPY --chown=appuser:appgroup --chmod=555 ./app ./app
+COPY --chmod=555 ./app ./app
 
 USER appuser
 
