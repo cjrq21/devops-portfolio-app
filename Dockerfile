@@ -1,5 +1,5 @@
 # --- ETAPA 1: Builder (Alpine) ---
-FROM python:3.9-alpine as builder
+FROM python:3.9-alpine AS builder
 
 WORKDIR /app
 
