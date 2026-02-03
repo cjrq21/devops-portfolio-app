@@ -1,6 +1,9 @@
 # --- ETAPA 1: Builder (Alpine) ---
 FROM python:3.9-alpine AS builder
 
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache openssl
+
 WORKDIR /app
 
 RUN apk add --no-cache gcc musl-dev libffi-dev
